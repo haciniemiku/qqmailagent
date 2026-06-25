@@ -1,141 +1,51 @@
-Welcome to Ambient Agent 101!
+# QQ Mail Agent / QQ 邮箱智能处理 Agent
 
-## Introduction
-In this session, you will learn about the fundamentals of LangGraph through one of our notebooks. It builds up to an ["ambient"](https://blog.langchain.dev/introducing-ambient-agents/) agent that can manage your email with connection to the Gmail API. It's grouped into 4 sections in the notebook in `notebooks` , with accompanying code in the `src/email_assistant` directory. These section build from the basics of agents, to human-in-the-loop, and finally to memory. These all come together in an agent that we will deploy and evaluate, and the principles can be applied to other agents across a wide range of tasks. 
+基于 LangGraph + LangChain 的 QQ 邮箱智能处理 Agent。它通过 IMAP 读取 QQ 邮箱邮件，将邮件解析为结构化输入，提交给 LangGraph 工作流进行分类和处理；需要回复时生成草稿，并在人工确认后通过 SMTP 发出邮件。
 
-This is a condensed version of LangChain Academy, and is intended to be run in a session with a LangChain engineer. If you're interested in going into more depth, or working through a tutorial on your own, check out LangChain Academy here! LangChain Academy has helpful pre-recorded videos from one of our LangChain engineers.
+A LangGraph + LangChain email agent for QQ Mail. It reads emails through IMAP, converts them into structured inputs, sends them into a LangGraph workflow for triage and processing, drafts replies when needed, and sends emails through SMTP only after human approval.
 
-![overview](notebooks/img/overview.png)
+## 功能 / Features
 
+- QQ 邮箱 IMAP 收信 / Read QQ Mail through IMAP
+- QQ 邮箱 SMTP 发信 / Send replies through SMTP
+- 邮件分类：`ignore`、`notify`、`respond` / Email triage into `ignore`, `notify`, and `respond`
+- LangGraph thread/run 工作流处理 / LangGraph thread/run based workflow
+- Tool calling 邮箱工具调用 / Tool calling for mailbox operations
+- Human-in-the-loop 人工确认 / Human approval before sending
+- LangGraph memory 用户偏好记忆 / User preference memory
+- LangSmith tracing 调试与追踪 / LangSmith tracing for debugging
 
-
-
-## Environment Setup 
-
-### Clone the Ambient Agent 101 repo
-```
-git clone https://github.com/langchain-ai/langgraph-101.git
-```
-
-### Python Version
-
-* Ensure you're using Python 3.11 or later. 
-* This version is required for optimal compatibility with LangGraph. 
+## 安装 / Installation
 
 ```shell
-python3 --version
-```
-
-### API Keys
-
-* If you don't have an OpenAI API key, you can sign up [here](https://openai.com/index/openai-api/).
-* Sign up for LangSmith [here](https://smith.langchain.com/).
-* Generate a LangSmith API key.
-
-### Set Environment Variables
-
-* Create a `.env` file in the root directory:
-```shell
-# Copy the .env.example file to .env
+git clone https://github.com/haciniemiku/qqmailagent.git
+cd qqmailagent
+uv sync --extra dev
+source .venv/bin/activate
 cp .env.example .env
 ```
 
-### Alternative Models Instructions 
-
-If you are using alternative models (e.g., Anthropic, Bedrock, AzureOpenAI) instead of OpenAI, there are a few things you need to do.
-
-* Set necessary environment variables in the `.env` file.
-
-* Navigate to [utils.py](/src/email_assistant/utils.py), and uncomment the code for the model that you are looking to run. 
-
-
-
-### Package Installation
-
-**Recommended: Using uv (faster and more reliable)**
+If you do not use `uv`:
 
 ```shell
-# Install uv if you haven't already
-pip install uv
-
-# Install the package with development dependencies
-uv sync --extra dev
-
-# Activate the virtual environment
+python3 -m venv .venv
 source .venv/bin/activate
+python3 -m pip install --upgrade pip
+pip install -e .
 ```
 
-**Alternative: Using pip**
+## 配置 / Configuration
+
+Edit `.env`:
 
 ```shell
-$ python3 -m venv .venv
-$ source .venv/bin/activate
-# Ensure you have a recent version of pip (required for editable installs with pyproject.toml)
-$ python3 -m pip install --upgrade pip
-# Install the package in editable mode
-$ pip install -e .
-```
+OPENAI_API_KEY="<OpenAI-API-Key>"
 
-> **⚠️ IMPORTANT**: Do not skip the package installation step! This editable install is **required** for the notebooks to work correctly. The package is installed as `interrupt_workshop` with import name `email_assistant`, allowing you to import from anywhere with `from email_assistant import ...`
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY="<LangSmith-API-Key>"
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_PROJECT="ambient-agent-101"
 
-## Structure 
-
-The repo is organized into the 4 sections, with accompanying code in the `src/email_assistant` directory.
-
-* Notebook: [notebooks/ambient_agent.ipynb](/notebooks/ambient_agent.ipynb)
-
-### Section 1. Building an ReAct agent 
-
-* Code: [src/email_assistant/email_assistant.py](/src/email_assistant/email_assistant.py)
-
-![overview-agent](notebooks/img/overview_agent.png)
-
-This section shows how to build the email assistant, combining an [email triage step](https://langchain-ai.github.io/langgraph/tutorials/workflows/) with an agent that handles the email response. You can see the linked code for the full implementation in `src/email_assistant/email_assistant.py`.
-
-![Screenshot 2025-04-04 at 4 06 18 PM](notebooks/img/studio.png)
-
-
-### Section 2. Human-in-the-loop 
-* Code: [src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py)
-
-![overview-hitl](notebooks/img/overview_hitl.png)
-
-This section shows how to add human-in-the-loop (HITL), allowing the user to review specific tool calls (e.g., send email, schedule meeting). For this, we use [Agent Inbox](https://github.com/langchain-ai/agent-inbox) as an interface for human in the loop. You can see the linked code for the full implementation in [src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py).
-
-![Agent Inbox showing email threads](notebooks/img/agent-inbox.png)
-
-### Section 3. Memory  
-* Code: [src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)
-
-This notebook shows how to add memory to the email assistant, allowing it to learn from user feedback and adapt to preferences over time. The memory-enabled assistant ([email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)) uses the [LangGraph Store](https://langchain-ai.github.io/langgraph/concepts/memory/#long-term-memory) to persist memories. You can see the linked code for the full implementation in [src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py).
-
-![overview-memory](notebooks/img/overview_memory.png)  
-
-
-
-
-### [Optional for Training] Section 4. Evaluation 
-* Notebook: [notebooks/evaluation.ipynb](/notebooks/evaluation.ipynb)
-![overview-eval](notebooks/img/overview_eval.png)
-
-This notebook introduces evaluation with an email dataset in [eval/email_dataset.py](/eval/email_dataset.py). It shows how to run evaluations using Pytest and the LangSmith `evaluate` API. It runs evaluation for emails responses using LLM-as-a-judge as well as evaluations for tools calls and triage decisions.
-
-![Screenshot 2025-04-08 at 8 07 48 PM](notebooks/img/eval.png)
-
-
-
-
-## Connecting to APIs  
-
-The above notebooks using mock email and calendar tools. 
-
-### QQ Mail Integration
-
-This fork includes a QQ Mail integration that uses IMAP to read messages and SMTP
-to send replies. Create or update `.env` with your QQ Mail address and
-authorization code:
-
-```shell
 QQ_EMAIL="your-email@qq.com"
 QQ_EMAIL_AUTH_CODE="your-qq-mail-authorization-code"
 QQ_IMAP_HOST="imap.qq.com"
@@ -145,60 +55,97 @@ QQ_SMTP_PORT="465"
 QQ_MAILBOX="INBOX"
 ```
 
-Run the QQ Mail graph locally:
+Use a QQ Mail authorization code, not your QQ password.
+
+请使用 QQ 邮箱授权码，不要使用 QQ 密码。
+
+## 启动 / Run
+
+Start the local LangGraph server:
 
 ```shell
 langgraph dev
 ```
 
-Then ingest messages in another terminal:
+In another terminal, ingest recent QQ Mail messages:
+
+```shell
+source .venv/bin/activate
+python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 1440 --include-read
+```
+
+The QQ Mail graph name is:
+
+```text
+email_assistant_hitl_memory_qqmail
+```
+
+## 常用命令 / Common Commands
+
+Only process unread emails from the last 2 hours:
 
 ```shell
 python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 120
 ```
 
-The graph name is `email_assistant_hitl_memory_qqmail`.
-
-### Gmail Integration and Deployment
-
-Set up Google API credentials following the instructions in [Gmail Tools README](src/email_assistant/tools/gmail/README.md).
-
-The README also explains how to deploy the graph to LangGraph Platform.
-
-The full implementation of the Gmail integration is in [src/email_assistant/email_assistant_hitl_memory_gmail.py](/src/email_assistant/email_assistant_hitl_memory_gmail.py).
-
-## Running Tests
-
-The repository includes an automated test suite to evaluate the email assistant. 
-
-Tests verify correct tool usage and response quality using LangSmith for tracking.
-
-### Running Tests with [run_all_tests.py](/tests/run_all_tests.py)
+Include read emails from the last 24 hours:
 
 ```shell
-python tests/run_all_tests.py
+python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 1440 --include-read
 ```
 
-### Test Results
-
-Test results are logged to LangSmith under the project name specified in your `.env` file (`LANGSMITH_PROJECT`). This provides:
-- Visual inspection of agent traces
-- Detailed evaluation metrics
-- Comparison of different agent implementations
-
-### Available Test Implementations
-
-The available implementations for testing are:
-- `email_assistant` - Basic email assistant
-
-### Testing Notebooks
-
-You can also run tests to verify all notebooks execute without errors:
+Process only one email for testing:
 
 ```shell
-# Run all notebook tests
-python tests/test_notebooks.py
-
-# Or run via pytest
-pytest tests/test_notebooks.py -v
+python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 1440 --include-read --early
 ```
+
+Skip sender/thread filters:
+
+```shell
+python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 1440 --include-read --skip-filters
+```
+
+## 查看结果 / Inspect Results
+
+LangGraph Studio:
+
+```text
+https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
+```
+
+Agent Inbox:
+
+```text
+https://dev.agentinbox.ai/
+```
+
+Use:
+
+```text
+Deployment URL: http://127.0.0.1:2024
+Assistant / Graph ID: email_assistant_hitl_memory_qqmail
+```
+
+## 数据流 / Data Flow
+
+```text
+QQ Mail
+  ↓ IMAP
+fetch_group_emails()
+  ↓ email_data
+run_ingest.py
+  ↓ create/reuse LangGraph thread, create run
+email_assistant_hitl_memory_qqmail
+  ↓
+triage_router
+  ├── ignore  → END
+  ├── notify  → human review
+  └── respond → response_agent → human approval → SMTP send
+```
+
+## 安全提示 / Security
+
+`.env` is ignored by Git and should never be committed.
+
+`.env` 已被 Git 忽略，不要提交 API key、LangSmith key 或 QQ 邮箱授权码。
