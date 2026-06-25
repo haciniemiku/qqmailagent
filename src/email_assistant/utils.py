@@ -174,6 +174,24 @@ def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str]:
         email_input["body"],
         email_input["id"],
     )
+
+def parse_qqmail(email_input: dict) -> tuple[str, str, str, str, str]:
+    """Parse an email input dictionary for QQ Mail.
+
+    QQ Mail ingestion normalizes IMAP messages to the same shape used by the
+    Gmail graph: from, to, subject, body, and id.
+    """
+    return (
+        email_input["from"],
+        email_input["to"],
+        email_input["subject"],
+        email_input["body"],
+        email_input["id"],
+    )
+
+def format_qqmail_markdown(subject, author, to, email_thread, email_id=None):
+    """Format QQ Mail email details into markdown for display."""
+    return format_gmail_markdown(subject, author, to, email_thread, email_id)
     
 def extract_message_content(message) -> str:
     """Extract content from different message types as clean string.

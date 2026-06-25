@@ -1,12 +1,17 @@
 from typing import Dict, List, Callable, Any, Optional
 from langchain_core.tools import BaseTool
 
-def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = False) -> List[BaseTool]:
+def get_tools(
+    tool_names: Optional[List[str]] = None,
+    include_gmail: bool = False,
+    include_qqmail: bool = False,
+) -> List[BaseTool]:
     """Get specified tools or all tools if tool_names is None.
     
     Args:
         tool_names: Optional list of tool names to include. If None, returns all tools.
         include_gmail: Whether to include Gmail tools. Defaults to False.
+        include_qqmail: Whether to include QQ Mail tools. Defaults to False.
         
     Returns:
         List of tool objects
@@ -42,6 +47,27 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
             })
         except ImportError:
             # If Gmail tools aren't available, continue without them
+            pass
+
+    # Add QQ Mail tools if requested. These intentionally use the same public
+    # tool names as the Gmail integration so the agent graph can stay provider-neutral.
+    if include_qqmail:
+        try:
+            from email_assistant.tools.qqmail.qqmail_tools import (
+                fetch_emails_tool,
+                send_email_tool,
+                check_calendar_tool,
+                schedule_meeting_tool,
+            )
+
+            all_tools.update({
+                "fetch_emails_tool": fetch_emails_tool,
+                "send_email_tool": send_email_tool,
+                "check_calendar_tool": check_calendar_tool,
+                "schedule_meeting_tool": schedule_meeting_tool,
+            })
+        except ImportError:
+            # If QQ Mail tools aren't available, continue without them
             pass
     
     if tool_names is None:

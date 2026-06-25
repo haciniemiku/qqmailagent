@@ -129,6 +129,36 @@ This notebook introduces evaluation with an email dataset in [eval/email_dataset
 
 The above notebooks using mock email and calendar tools. 
 
+### QQ Mail Integration
+
+This fork includes a QQ Mail integration that uses IMAP to read messages and SMTP
+to send replies. Create or update `.env` with your QQ Mail address and
+authorization code:
+
+```shell
+QQ_EMAIL="your-email@qq.com"
+QQ_EMAIL_AUTH_CODE="your-qq-mail-authorization-code"
+QQ_IMAP_HOST="imap.qq.com"
+QQ_IMAP_PORT="993"
+QQ_SMTP_HOST="smtp.qq.com"
+QQ_SMTP_PORT="465"
+QQ_MAILBOX="INBOX"
+```
+
+Run the QQ Mail graph locally:
+
+```shell
+langgraph dev
+```
+
+Then ingest messages in another terminal:
+
+```shell
+python src/email_assistant/tools/qqmail/run_ingest.py --email your-email@qq.com --minutes-since 120
+```
+
+The graph name is `email_assistant_hitl_memory_qqmail`.
+
 ### Gmail Integration and Deployment
 
 Set up Google API credentials following the instructions in [Gmail Tools README](src/email_assistant/tools/gmail/README.md).
@@ -172,4 +202,3 @@ python tests/test_notebooks.py
 # Or run via pytest
 pytest tests/test_notebooks.py -v
 ```
-
